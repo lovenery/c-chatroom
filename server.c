@@ -17,13 +17,13 @@ ClientList *root, *now;
 void catch_ctrl_c_and_exit(int sig) {
     ClientList *tmp;
     while (root != NULL) {
-        printf("Close socketfd: %d\n", root->data);
+        printf("\nClose socketfd: %d\n", root->data);
         close(root->data); // close all socket include server_sockfd
         tmp = root;
         root = root->link;
         free(tmp);
     }
-    printf("\nBye\n");
+    printf("Bye\n");
     exit(EXIT_SUCCESS);
 }
 
@@ -36,7 +36,7 @@ void client_handler(void *p_client) {
         int receive = recv(np->data, recv_buffer, sizeof(recv_buffer), 0);
         if (receive > 0) {
             sprintf(send_buffer, "%s from %s", recv_buffer, np->ip);
-        } else if (receive == 0 || strcmp(recv_buffer, "exit\n") == 0) {
+        } else if (receive == 0 || strcmp(recv_buffer, "exit") == 0) {
             sprintf(send_buffer, "%d leave the chatroom.", np->data);
             leave_flag = 1;
         } else {
@@ -83,14 +83,14 @@ int main()
     struct sockaddr_in server_info, client_info;
     int s_addrlen = sizeof(server_info);
     int c_addrlen = sizeof(client_info);
-    bzero(&server_info, sizeof(server_info));
-    bzero(&client_info, sizeof(client_info));
+    bzero(&server_info, s_addrlen);
+    bzero(&client_info, c_addrlen);
     server_info.sin_family = PF_INET;
     server_info.sin_addr.s_addr = INADDR_ANY;
     server_info.sin_port = htons(8888);
 
     // Bind and Listen
-    bind(server_sockfd, (struct sockaddr *)&server_info, sizeof(server_info));
+    bind(server_sockfd, (struct sockaddr *)&server_info, s_addrlen);
     listen(server_sockfd, 5);
 
     // Print Server IP

@@ -46,10 +46,11 @@ void send_msg_handler() {
             }
         }
         send(sockfd, message, sizeof(message), 0);
-        if (strcmp(message, "exit\n") == 0) {
+        if (strcmp(message, "exit") == 0) {
             break;
         }
     }
+    catch_ctrl_c_and_exit(2);
 }
 
 int main()
@@ -67,14 +68,14 @@ int main()
     struct sockaddr_in server_info, client_info;
     int s_addrlen = sizeof(server_info);
     int c_addrlen = sizeof(client_info);
-    bzero(&server_info, sizeof(server_info));
-    bzero(&client_info, sizeof(client_info));
+    bzero(&server_info, s_addrlen);
+    bzero(&client_info, c_addrlen);
     server_info.sin_family = PF_INET;
     server_info.sin_addr.s_addr = inet_addr("127.0.0.1");
     server_info.sin_port = htons(8888);
 
     // Connect to Server
-    int err = connect(sockfd, (struct sockaddr *)&server_info, sizeof(server_info));
+    int err = connect(sockfd, (struct sockaddr *)&server_info, s_addrlen);
     if (err == -1) {
         printf("Connection to Server error!\n");
         exit(EXIT_FAILURE);
