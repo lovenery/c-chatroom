@@ -4,6 +4,7 @@
 
 ## Environment
 
+- macOS, Ubuntu
 - Unix Socket
 - POSIX Thread Library
 
@@ -16,3 +17,4 @@ gcc -pthread server.c ; ./a.out
 # Client
 gcc -pthread client.c ; ./a.out
 ```
+
