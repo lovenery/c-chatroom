@@ -8,7 +8,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include "list.h"
+#include "lib/proto.h"
+#include "lib/list.h"
 
 // Global variables
 int server_sockfd = 0, client_sockfd = 0;
@@ -27,34 +28,52 @@ void catch_ctrl_c_and_exit(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+void send_to_all_clients(ClientList *np, char tmp_buffer[]) {
+    ClientList *tmp = root->link;
+    while (tmp != NULL) {
+        if (np->data != tmp->data) { // all clients except itself.
+            printf("Send to sockfd %d: \"%s\" \n", tmp->data, tmp_buffer);
+            send(tmp->data, tmp_buffer, LENGTH_MSG, 0);
+        }
+        tmp = tmp->link;
+    }
+}
+
 void client_handler(void *p_client) {
     int leave_flag = 0;
-    char recv_buffer[100];
-    char send_buffer[100];
+    char nickname[LENGTH_NAME] = {};
+    char recv_buffer[LENGTH_MSG] = {};
+    char send_buffer[LENGTH_MSG] = {};
     ClientList *np = (ClientList *)p_client;
+
+    // Naming
+    if (recv(np->data, nickname, LENGTH_NAME, 0) <= 0 || strlen(nickname) < 2) {
+        printf("%s didn't input name.\n", np->ip);
+        leave_flag = 1;
+    } else {
+        strncpy(np->name, nickname, LENGTH_NAME);
+        printf("%s(%s)(%d) join the chatroom.\n", np->name, np->ip, np->data);
+        sprintf(send_buffer, "%s(%s) join the chatroom.", np->name, np->ip);
+        send_to_all_clients(np, send_buffer);
+    }
+
+    // Conversation
     while (1) {
-        int receive = recv(np->data, recv_buffer, sizeof(recv_buffer), 0);
-        if (receive > 0) {
-            sprintf(send_buffer, "%s from %s", recv_buffer, np->ip);
-        } else if (receive == 0 || strcmp(recv_buffer, "exit") == 0) {
-            sprintf(send_buffer, "%d leave the chatroom.", np->data);
-            leave_flag = 1;
-        } else {
-            printf("Fatal Error: -1\n");
-        }
-        
-        // Send to all client except self.
-        ClientList *tmp = root->link;
-        while (tmp != NULL) {
-            if (np->data != tmp->data) {
-                printf("Send to sockfd %d: \"%s\" \n", tmp->data, send_buffer);
-                send(tmp->data, send_buffer, sizeof(send_buffer), 0);
-            }
-            tmp = tmp->link;
-        }
         if (leave_flag) {
             break;
         }
+        int receive = recv(np->data, recv_buffer, LENGTH_MSG, 0);
+        if (receive > 0) {
+            sprintf(send_buffer, "%s：%s from %s", np->name, recv_buffer, np->ip);
+        } else if (receive == 0 || strcmp(recv_buffer, "exit") == 0) {
+            printf("%s(%s)(%d) leave the chatroom.\n", np->name, np->ip, np->data);
+            sprintf(send_buffer, "%s(%s) leave the chatroom.", np->name, np->ip);
+            leave_flag = 1;
+        } else {
+            printf("Fatal Error: -1\n");
+            leave_flag = 1;
+        }
+        send_to_all_clients(np, send_buffer);
     }
 
     // Remove Node

@@ -8,19 +8,22 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include "lib/proto.h"
+#include "lib/string.h"
 
 // Global variables
 volatile sig_atomic_t flag = 0;
 int sockfd = 0;
+char nickname[LENGTH_NAME] = {};
 
 void catch_ctrl_c_and_exit(int sig) {
     flag = 1;
 }
 
 void recv_msg_handler() {
-    char receiveMessage[100] = {};
+    char receiveMessage[LENGTH_MSG] = {};
     while (1) {
-        int receive = recv(sockfd, receiveMessage, sizeof(receiveMessage), 0);
+        int receive = recv(sockfd, receiveMessage, LENGTH_MSG, 0);
         if (receive > 0) {
             printf("\r%s\n", receiveMessage);
             printf("\r%s", "> ");
@@ -34,18 +37,13 @@ void recv_msg_handler() {
 }
 
 void send_msg_handler() {
-    char message[100] = {};
+    char message[LENGTH_MSG] = {};
     while (1) {
         printf("\r%s", "> ");
         fflush(stdout);
-        fgets(message, 100, stdin);
-        for (int i = 0; i < 100; i++) { // trim \n
-            if (message[i] == '\n') {
-                message[i] = '\0';
-                break;
-            }
-        }
-        send(sockfd, message, sizeof(message), 0);
+        fgets(message, LENGTH_MSG, stdin);
+        str_trim_lf(message, LENGTH_MSG);
+        send(sockfd, message, LENGTH_MSG, 0);
         if (strcmp(message, "exit") == 0) {
             break;
         }
@@ -86,6 +84,17 @@ int main()
     getpeername(sockfd, (struct sockaddr*) &server_info, (socklen_t*) &s_addrlen);
     printf("You are: %s:%d\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
     printf("Connect to Server: %s:%d\n", inet_ntoa(server_info.sin_addr), ntohs(server_info.sin_port));
+
+    // Naming
+    printf("Please enter your name: ");
+    fgets(nickname, LENGTH_NAME, stdin);
+    if (strlen(nickname) > 2) { // include '\0'
+        str_trim_lf(nickname, LENGTH_NAME);
+        send(sockfd, nickname, LENGTH_NAME, 0);
+    } else {
+        printf("\nName must be more than two characters.\n");
+        exit(EXIT_FAILURE);
+    }
 
     pthread_t send_msg_thread;
     if (pthread_create(&send_msg_thread, NULL, (void *) send_msg_handler, NULL) != 0) {

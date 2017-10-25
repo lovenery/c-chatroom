@@ -1,0 +1,2 @@
+#define LENGTH_NAME 30
+#define LENGTH_MSG 100
