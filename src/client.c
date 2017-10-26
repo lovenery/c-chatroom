@@ -80,8 +80,8 @@ int main()
     struct sockaddr_in server_info, client_info;
     int s_addrlen = sizeof(server_info);
     int c_addrlen = sizeof(client_info);
-    bzero(&server_info, s_addrlen);
-    bzero(&client_info, c_addrlen);
+    memset(&server_info, 0, s_addrlen);
+    memset(&client_info, 0, c_addrlen);
     server_info.sin_family = PF_INET;
     server_info.sin_addr.s_addr = inet_addr("127.0.0.1");
     server_info.sin_port = htons(8888);
