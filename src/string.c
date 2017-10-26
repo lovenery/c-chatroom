@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "string.h"
 
 void str_trim_lf (char* arr, int length) {
@@ -7,4 +8,9 @@ void str_trim_lf (char* arr, int length) {
             break;
         }
     }
+}
+
+void str_overwrite_stdout() {
+    printf("\r%s", "> ");
+    fflush(stdout);
 }

@@ -21,13 +21,12 @@ void catch_ctrl_c_and_exit(int sig) {
 }
 
 void recv_msg_handler() {
-    char receiveMessage[LENGTH_MSG] = {};
+    char receiveMessage[LENGTH_SEND] = {};
     while (1) {
-        int receive = recv(sockfd, receiveMessage, LENGTH_MSG, 0);
+        int receive = recv(sockfd, receiveMessage, LENGTH_SEND, 0);
         if (receive > 0) {
             printf("\r%s\n", receiveMessage);
-            printf("\r%s", "> ");
-            fflush(stdout);
+            str_overwrite_stdout();
         } else if (receive == 0) {
             break;
         } else { 
@@ -39,10 +38,15 @@ void recv_msg_handler() {
 void send_msg_handler() {
     char message[LENGTH_MSG] = {};
     while (1) {
-        printf("\r%s", "> ");
-        fflush(stdout);
-        fgets(message, LENGTH_MSG, stdin);
-        str_trim_lf(message, LENGTH_MSG);
+        str_overwrite_stdout();
+        while (fgets(message, LENGTH_MSG, stdin) != NULL) {
+            str_trim_lf(message, LENGTH_MSG);
+            if (strlen(message) == 0) {
+                str_overwrite_stdout();
+            } else {
+                break;
+            }
+        }
         send(sockfd, message, LENGTH_MSG, 0);
         if (strcmp(message, "exit") == 0) {
             break;
@@ -54,6 +58,16 @@ void send_msg_handler() {
 int main()
 {
     signal(SIGINT, catch_ctrl_c_and_exit);
+
+    // Naming
+    printf("Please enter your name: ");
+    if (fgets(nickname, LENGTH_NAME, stdin) != NULL) {
+        str_trim_lf(nickname, LENGTH_NAME);
+    }
+    if (strlen(nickname) < 2 || strlen(nickname) >= LENGTH_NAME-1) {
+        printf("\nName must be more than one and less than thirty characters.\n");
+        exit(EXIT_FAILURE);
+    }
 
     // Create socket
     sockfd = socket(AF_INET , SOCK_STREAM , 0);
@@ -82,30 +96,21 @@ int main()
     // Names
     getsockname(sockfd, (struct sockaddr*) &client_info, (socklen_t*) &c_addrlen);
     getpeername(sockfd, (struct sockaddr*) &server_info, (socklen_t*) &s_addrlen);
-    printf("You are: %s:%d\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
     printf("Connect to Server: %s:%d\n", inet_ntoa(server_info.sin_addr), ntohs(server_info.sin_port));
+    printf("You are: %s:%d\n", inet_ntoa(client_info.sin_addr), ntohs(client_info.sin_port));
 
-    // Naming
-    printf("Please enter your name: ");
-    fgets(nickname, LENGTH_NAME, stdin);
-    if (strlen(nickname) > 2) { // include '\0'
-        str_trim_lf(nickname, LENGTH_NAME);
-        send(sockfd, nickname, LENGTH_NAME, 0);
-    } else {
-        printf("\nName must be more than two characters.\n");
-        exit(EXIT_FAILURE);
-    }
+    send(sockfd, nickname, LENGTH_NAME, 0);
 
     pthread_t send_msg_thread;
     if (pthread_create(&send_msg_thread, NULL, (void *) send_msg_handler, NULL) != 0) {
         printf ("Create pthread error!\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     pthread_t recv_msg_thread;
     if (pthread_create(&recv_msg_thread, NULL, (void *) recv_msg_handler, NULL) != 0) {
         printf ("Create pthread error!\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     while (1) {

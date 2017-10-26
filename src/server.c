@@ -33,7 +33,7 @@ void send_to_all_clients(ClientList *np, char tmp_buffer[]) {
     while (tmp != NULL) {
         if (np->data != tmp->data) { // all clients except itself.
             printf("Send to sockfd %d: \"%s\" \n", tmp->data, tmp_buffer);
-            send(tmp->data, tmp_buffer, LENGTH_MSG, 0);
+            send(tmp->data, tmp_buffer, LENGTH_SEND, 0);
         }
         tmp = tmp->link;
     }
@@ -43,11 +43,11 @@ void client_handler(void *p_client) {
     int leave_flag = 0;
     char nickname[LENGTH_NAME] = {};
     char recv_buffer[LENGTH_MSG] = {};
-    char send_buffer[LENGTH_MSG] = {};
+    char send_buffer[LENGTH_SEND] = {};
     ClientList *np = (ClientList *)p_client;
 
     // Naming
-    if (recv(np->data, nickname, LENGTH_NAME, 0) <= 0 || strlen(nickname) < 2) {
+    if (recv(np->data, nickname, LENGTH_NAME, 0) <= 0 || strlen(nickname) < 2 || strlen(nickname) >= LENGTH_NAME-1) {
         printf("%s didn't input name.\n", np->ip);
         leave_flag = 1;
     } else {
@@ -64,6 +64,9 @@ void client_handler(void *p_client) {
         }
         int receive = recv(np->data, recv_buffer, LENGTH_MSG, 0);
         if (receive > 0) {
+            if (strlen(recv_buffer) == 0) {
+                continue;
+            }
             sprintf(send_buffer, "%s：%s from %s", np->name, recv_buffer, np->ip);
         } else if (receive == 0 || strcmp(recv_buffer, "exit") == 0) {
             printf("%s(%s)(%d) leave the chatroom.\n", np->name, np->ip, np->data);
@@ -77,6 +80,7 @@ void client_handler(void *p_client) {
     }
 
     // Remove Node
+    close(np->data);
     if (np == now) { // remove an edge node
         now = np->prev;
         now->link = NULL;
