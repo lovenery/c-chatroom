@@ -8,8 +8,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include "lib/proto.h"
-#include "lib/list.h"
+#include "proto.h"
+#include "server.h"
 
 // Global variables
 int server_sockfd = 0, client_sockfd = 0;

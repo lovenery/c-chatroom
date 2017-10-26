@@ -1,3 +1,6 @@
+#ifndef LIST
+#define LIST
+
 struct ClientNode {
     int data;
     struct ClientNode* prev;
@@ -16,3 +19,5 @@ ClientList *newNode(int sockfd, char* ip) {
     strncpy(np->name, "NULL", 5);
     return np;
 }
+
+#endif // LIST

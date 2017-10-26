@@ -8,8 +8,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#include "lib/proto.h"
-#include "lib/string.h"
+#include "proto.h"
+#include "string.h"
 
 // Global variables
 volatile sig_atomic_t flag = 0;

@@ -11,10 +11,8 @@
 ## Run
 
 ```
-# Server
-gcc -pthread server.c ; ./a.out
-
-# Client
-gcc -pthread client.c ; ./a.out
+make
+./server.out
+./client.out
 ```
 
