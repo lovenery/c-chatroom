@@ -1,14 +1,13 @@
 #ifndef LIST
 #define LIST
 
-struct ClientNode {
+typedef struct ClientNode {
     int data;
     struct ClientNode* prev;
     struct ClientNode* link;
     char ip[16];
     char name[31];
-};
-typedef struct ClientNode ClientList;
+} ClientList;
 
 ClientList *newNode(int sockfd, char* ip) {
     ClientList *np = (ClientList *)malloc( sizeof(ClientList) );
